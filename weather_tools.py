@@ -435,24 +435,37 @@ SKILL_TOOLS = [
 
 if __name__ == "__main__":
     import asyncio
+    import sys
+    import argparse
     
-    async def demo():
-        """演示天气查询功能"""
-        city = "沈阳浑南区"
-        
-        print("=== 实时天气 ===")
-        result = await get_realtime_weather(city)
-        print(format_weather_result(result))
-        
-        print("\n=== 今日天气 ===")
-        today = await get_today_weather(city)
-        if today.get("success"):
-            print(f"日期: {today['date']} (星期{today['week']})")
-            print(f"白天: {today['day_weather']} {today['day_temp']}°C")
-            print(f"夜间: {today['night_weather']} {today['night_temp']}°C")
-        
-        print("\n=== 天气预报 ===")
-        forecast = await get_forecast_weather(city)
-        print(format_forecast_result(forecast))
+    parser = argparse.ArgumentParser(description="天气预报查询工具")
+    parser.add_argument("--city", type=str, help="城市名称（如：北京、上海、沈阳浑南区）")
+    parser.add_argument("--type", type=str, choices=["realtime", "forecast", "today"], 
+                       default="realtime", help="查询类型：realtime(实时), forecast(预报), today(今日)")
     
-    asyncio.run(demo())
+    args = parser.parse_args()
+    
+    async def main():
+        city = args.city or get_default_city()
+        
+        if args.type == "realtime":
+            result = await get_realtime_weather(city)
+            print(format_weather_result(result))
+        elif args.type == "forecast":
+            result = await get_forecast_weather(city)
+            print(format_forecast_result(result))
+        elif args.type == "today":
+            result = await get_today_weather(city)
+            if result.get("success"):
+                print(f"📍 {result['city']}（{result['province']}）今日天气")
+                print(f"📅 {result['date']} 星期{result['week']}")
+                print(f"☀️ 白天：{result['day_weather']} {result['day_temp']}°C {result['day_wind']}风 {result['day_power']}级")
+                print(f"🌙 夜间：{result['night_weather']} {result['night_temp']}°C {result['night_wind']}风 {result['night_power']}级")
+            else:
+                print(f"查询失败: {result.get('error_message', '未知错误')}")
+    
+    try:
+        asyncio.run(main())
+    except KeyboardInterrupt:
+        print("\n查询已取消")
+        sys.exit(0)

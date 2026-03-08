@@ -117,6 +117,20 @@ Agent：正在获取上海实时天气数据...
 
 ## 工具说明
 
+**重要：本技能提供了三个Python异步函数工具，Agent应通过调用这些函数来获取天气数据。**
+
+### 工具调用方式
+
+本技能在 `weather_tools.py` 中定义了三个异步函数，Agent可以通过以下方式调用：
+
+```python
+# 导入工具函数
+from weather_tools import get_realtime_weather, get_forecast_weather, get_today_weather
+
+# 调用示例（需要在异步环境中）
+result = await get_realtime_weather("沈阳浑南区")
+```
+
 ### get_realtime_weather
 
 获取城市实时天气信息。
@@ -133,9 +147,14 @@ Agent：正在获取上海实时天气数据...
   "temperature": "7",
   "humidity": "45",
   "wind_direction": "西南",
-  "wind_power": "1-3"
+  "wind_power": "1-3",
+  "report_time": "2026-03-09 14:00:00"
 }
 ```
+
+**使用场景：**
+- 用户询问"当前天气"、"现在天气"、"实时天气"
+- 需要获取当前温度、湿度、风向等信息
 
 ### get_forecast_weather
 
@@ -144,12 +163,95 @@ Agent：正在获取上海实时天气数据...
 **参数：**
 - city (string, 必填): 城市名称或adcode编码
 
+**返回：**
+```json
+{
+  "success": true,
+  "city": "浑南区",
+  "province": "辽宁",
+  "report_time": "2026-03-09 14:00:00",
+  "forecasts": [
+    {
+      "date": "2026-03-09",
+      "week": "7",
+      "day_weather": "多云",
+      "night_weather": "晴",
+      "day_temp": "12",
+      "night_temp": "3",
+      "day_wind": "西南",
+      "night_wind": "西南",
+      "day_power": "1-3",
+      "night_power": "1-3"
+    }
+  ]
+}
+```
+
+**使用场景：**
+- 用户询问"天气预报"、"未来几天天气"
+- 需要获取明天、后天等未来天气
+
 ### get_today_weather
 
 获取当天天气预报（便捷方法）。
 
 **参数：**
 - city (string, 必填): 城市名称或adcode编码
+
+**返回：**
+```json
+{
+  "success": true,
+  "city": "浑南区",
+  "province": "辽宁",
+  "date": "2026-03-09",
+  "week": "7",
+  "day_weather": "多云",
+  "night_weather": "晴",
+  "day_temp": "12",
+  "night_temp": "3",
+  "day_wind": "西南",
+  "night_wind": "西南",
+  "day_power": "1-3",
+  "night_power": "1-3"
+}
+```
+
+**使用场景：**
+- 用户询问"今天天气"、"今日天气"
+- 只需要当天天气信息
+
+### Agent使用指南
+
+当用户询问天气相关问题时，Agent应该：
+
+1. **识别用户意图**：
+   - "现在天气" → 使用 `get_realtime_weather`
+   - "今天天气" → 使用 `get_today_weather`
+   - "天气预报"、"未来天气" → 使用 `get_forecast_weather`
+
+2. **提取城市信息**：
+   - 从用户消息中提取城市名（如"北京"、"沈阳浑南区"）
+   - 如果用户未指定城市，使用默认城市（通过环境变量DEFAULT_CITY配置）
+
+3. **调用相应函数**：
+   ```python
+   # 示例：查询沈阳浑南区的实时天气
+   result = await get_realtime_weather("沈阳浑南区")
+   
+   # 检查结果
+   if result["success"]:
+       # 格式化输出给用户
+       print(f"{result['city']}当前天气：{result['weather']}")
+       print(f"温度：{result['temperature']}°C")
+   else:
+       print(f"查询失败：{result['error_message']}")
+   ```
+
+4. **格式化输出**：
+   - 使用 `format_weather_result(result)` 格式化实时天气
+   - 使用 `format_forecast_result(result)` 格式化天气预报
+   - 或自定义格式化输出
 
 ## API参考
 
